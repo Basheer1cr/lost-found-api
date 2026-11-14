@@ -84,6 +84,10 @@ load();
 </body>
 </html>
 
+@app.get("/")
+def home():
+    return RedirectResponse("/app")
+
 @app.get("/app")
 def serve_frontend():
     return FileResponse("index.html")
