@@ -1,0 +1,89 @@
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+import os
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Lost & Found - College</title>
+<style>
+body{font-family:Arial;background:#f0f2f5;padding:20px}
+.box{background:white;padding:20px;border-radius:10px;max-width:600px;margin:auto}
+input,select{width:100%;padding:10px;margin:5px 0;border:1px solid #ccc;border-radius:5px}
+button{padding:10px 15px;border:none;border-radius:5px;cursor:pointer;color:white}
+.lostBtn{background:#e74c3c}.foundBtn{background:#27ae60}.refreshBtn{background:#2980b9}
+.card{border:1px solid #ddd;padding:10px;margin:10px 0;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>🎒 College Lost & Found</h2>
+<input id="title" placeholder="Title - e.g. College ID Card">
+<input id="desc" placeholder="Description">
+<input id="place" placeholder="Place - e.g. Canteen">
+<input id="date" type="date">
+<input id="contact" placeholder="Contact Number">
+<br><br>
+<button class="lostBtn" onclick="send('lost')">Report LOST</button>
+<button class="foundBtn" onclick="send('found')">Report FOUND</button>
+<button class="refreshBtn" onclick="load()">Refresh List</button>
+<hr>
+<input id="search" placeholder="Search... e.g. ID Card" oninput="load()">
+<div id="list"></div>
+</div>
+
+<script>
+const API = "";
+
+async function send(type){
+  const data = {
+    type: type,
+    title: document.getElementById('title').value,
+    description: document.getElementById('desc').value,
+    place: document.getElementById('place').value,
+    date: document.getElementById('date').value,
+    contact: document.getElementById('contact').value
+  };
+  if(!data.title || !data.place){ alert("Fill Title and Place"); return; }
+  const url = type === 'lost' ? `${API}/lost` : `${API}/found`;
+  await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+  alert(type + " reported!");
+  load();
+}
+
+async function load(){
+  const search = document.getElementById('search').value;
+  let url = `${API}/items`;
+  if(search) url += `?search=${search}`;
+  const res = await fetch(url);
+  const items = await res.json();
+  let html = "";
+  items.forEach(it => {
+    html += `<div class="card">
+    <b>${it.type.toUpperCase()} - ${it.title}</b><br>
+    ${it.description} | ${it.place} | ${it.date}<br>
+    Contact: ${it.contact} | Status: <b>${it.status}</b><br>
+    <button style="background:#f39c12" onclick="markReturned(${it.id})">Mark Returned</button>
+    <button style="background:#c0392b" onclick="del(${it.id})">Delete</button>
+    </div>`;
+  });
+  document.getElementById('list').innerHTML = html || "No items yet";
+}
+
+async function markReturned(id){
+  await fetch(`${API}/items/${id}/returned`, {method:'PUT'});
+  load();
+}
+async function del(id){
+  await fetch(`${API}/items/${id}`, {method:'DELETE'});
+  load();
+}
+load();
+</script>
+</body>
+</html>
+
+@app.get("/app")
+def serve_frontend():
+    return FileResponse("index.html")
