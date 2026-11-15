@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
@@ -47,7 +48,11 @@ class ItemCreate(BaseModel):
 
 @app.get("/")
 def home():
-    return {"message": "Lost & Found API is running"}
+    return RedirectResponse("/app")
+
+@app.get("/app")
+def serve_frontend():
+    return FileResponse("index.html")
 
 @app.post("/lost")
 def report_lost(item: ItemCreate):
